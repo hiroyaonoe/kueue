@@ -41,6 +41,7 @@ var (
 )
 
 // Cache keeps track of the Workloads that got admitted through ClusterQueues.
+// 色んなものをメモリにキャッシュしているっぽい
 type Cache struct {
 	sync.RWMutex
 
@@ -82,11 +83,12 @@ func newCohort(name string, size int) *Cohort {
 
 // ClusterQueue is the internal implementation of kueue.ClusterQueue that
 // holds admitted workloads.
+// kueue.CQの定義とは若干違うっぽい
 type ClusterQueue struct {
 	Name                 string
 	Cohort               *Cohort
 	RequestableResources map[corev1.ResourceName][]FlavorLimits
-	UsedResources        Resources
+	UsedResources        Resources // 使用済みのリソース量をキャッシュする
 	Workloads            map[string]*workload.Info
 	NamespaceSelector    labels.Selector
 	// The set of key labels from all flavors of a resource.
@@ -399,16 +401,19 @@ func (c *Cache) ForgetWorkload(w *kueue.Workload) error {
 }
 
 // Usage reports the used resources and number of workloads admitted by the ClusterQueue.
+// 使用済リソースやCQに認められたworkloadの数を返す
 func (c *Cache) Usage(cqObj *kueue.ClusterQueue) (kueue.UsedResources, int, error) {
 	c.RLock()
 	defer c.RUnlock()
 
-	cq := c.clusterQueues[cqObj.Name]
+	cq := c.clusterQueues[cqObj.Name] // キャッシュしているCQを取得
 	if cq == nil {
 		return nil, 0, errCqNotFound
 	}
+	// TODO: 中身読む
 	usage := make(kueue.UsedResources, len(cq.UsedResources))
 	for rName, usedRes := range cq.UsedResources {
+		// NEXT: 2022-04-21
 		rUsage := make(map[string]kueue.Usage)
 		requestable := cq.RequestableResources[rName]
 		for _, flavor := range requestable {

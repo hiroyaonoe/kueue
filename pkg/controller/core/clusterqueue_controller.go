@@ -74,6 +74,7 @@ func (r *ClusterQueueReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	ctx = ctrl.LoggerInto(ctx, log)
 	log.V(2).Info("Reconciling ClusterQueue")
 
+	// Statusのupdateをreconcile処理の主体とする書き方よさそう
 	status, err := r.Status(&cqObj)
 	if err != nil {
 		log.Error(err, "Failed getting status from cache")
@@ -198,13 +199,13 @@ func (r *ClusterQueueReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kueue.ClusterQueue{}).
-		Watches(&source.Channel{Source: r.wlUpdateCh}, &wHandler).
+		Watches(&source.Channel{Source: r.wlUpdateCh}, &wHandler). // TODO: 何をしている？
 		WithEventFilter(r).
 		Complete(r)
 }
 
 func (r *ClusterQueueReconciler) Status(cq *kueue.ClusterQueue) (kueue.ClusterQueueStatus, error) {
-	usage, workloads, err := r.cache.Usage(cq)
+	usage, workloads, err := r.cache.Usage(cq) // TODO: cacheみる
 	if err != nil {
 		r.log.Error(err, "Failed getting usage from cache")
 		// This is likely because the cluster queue was recently removed,

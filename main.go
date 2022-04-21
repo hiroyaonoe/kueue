@@ -109,6 +109,7 @@ func main() {
 
 	queues := queue.NewManager(mgr.GetClient())
 	cCache := cache.New(mgr.GetClient())
+	// controller本体は pkg/controller/core
 	if failedCtrl, err := core.SetupControllers(mgr, queues, cCache); err != nil {
 		setupLog.Error(err, "Unable to create controller", "controller", failedCtrl)
 	}

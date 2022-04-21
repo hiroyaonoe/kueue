@@ -121,6 +121,8 @@ func ResourceValue(name corev1.ResourceName, q resource.Quantity) int64 {
 }
 
 func ResourceQuantity(name corev1.ResourceName, v int64) resource.Quantity {
+	// resource.Quantityは数値の固定小数点表示
+	// https://pkg.go.dev/k8s.io/apimachinery/pkg/api/resource#Quantity
 	switch name {
 	case corev1.ResourceCPU:
 		return *resource.NewMilliQuantity(v, resource.DecimalSI)
