@@ -64,6 +64,8 @@ func NewClusterQueueReconciler(client client.Client, qMgr *queue.Manager, cache 
 //+kubebuilder:rbac:groups=kueue.x-k8s.io,resources=clusterqueues/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kueue.x-k8s.io,resources=clusterqueues/finalizers,verbs=update
 
+// Reconcile cq reconcile はキャッシュから使用済リソース量やworkload数を取得して変更があるならstatusを更新する
+// cq, event以外のリソースは操作しない
 func (r *ClusterQueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var cqObj kueue.ClusterQueue
 	if err := r.client.Get(ctx, req.NamespacedName, &cqObj); err != nil {
@@ -205,7 +207,9 @@ func (r *ClusterQueueReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *ClusterQueueReconciler) Status(cq *kueue.ClusterQueue) (kueue.ClusterQueueStatus, error) {
-	usage, workloads, err := r.cache.Usage(cq) // TODO: cacheみる
+	// ここではキャッシュから使用済リソース量とworkloadの数を取得する
+	// キャッシュの更新はしない
+	usage, workloads, err := r.cache.Usage(cq)
 	if err != nil {
 		r.log.Error(err, "Failed getting usage from cache")
 		// This is likely because the cluster queue was recently removed,
@@ -216,6 +220,6 @@ func (r *ClusterQueueReconciler) Status(cq *kueue.ClusterQueue) (kueue.ClusterQu
 	return kueue.ClusterQueueStatus{
 		UsedResources:     usage,
 		AdmittedWorkloads: int32(workloads),
-		PendingWorkloads:  r.qManager.Pending(cq),
+		PendingWorkloads:  r.qManager.Pending(cq), // TODO: managerみる
 	}, nil
 }

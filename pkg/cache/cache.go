@@ -402,6 +402,8 @@ func (c *Cache) ForgetWorkload(w *kueue.Workload) error {
 
 // Usage reports the used resources and number of workloads admitted by the ClusterQueue.
 // 使用済リソースやCQに認められたworkloadの数を返す
+// キャッシュから値を取得して加工するだけであり、キャッシュの更新は行わない
+// TODO: どこで更新している？(workloadのreconcile ?)
 func (c *Cache) Usage(cqObj *kueue.ClusterQueue) (kueue.UsedResources, int, error) {
 	c.RLock()
 	defer c.RUnlock()
@@ -410,7 +412,7 @@ func (c *Cache) Usage(cqObj *kueue.ClusterQueue) (kueue.UsedResources, int, erro
 	if cq == nil {
 		return nil, 0, errCqNotFound
 	}
-	// TODO: 中身読む
+	// リソースの使用量をキャッシュから取得する
 	usage := make(kueue.UsedResources, len(cq.UsedResources))
 	for rName, usedRes := range cq.UsedResources {
 		// NEXT: 2022-04-21
@@ -421,7 +423,7 @@ func (c *Cache) Usage(cqObj *kueue.ClusterQueue) (kueue.UsedResources, int, erro
 			fUsage := kueue.Usage{
 				Total: pointer.Quantity(workload.ResourceQuantity(rName, used)),
 			}
-			borrowing := used - flavor.Min
+			borrowing := used - flavor.Min // borrowing = used - min 
 			if borrowing > 0 {
 				fUsage.Borrowed = pointer.Quantity(workload.ResourceQuantity(rName, borrowing))
 			}
@@ -429,6 +431,7 @@ func (c *Cache) Usage(cqObj *kueue.ClusterQueue) (kueue.UsedResources, int, erro
 		}
 		usage[rName] = rUsage
 	}
+	// workloadの数はそのまま返す
 	return usage, len(cq.Workloads), nil
 }
 
