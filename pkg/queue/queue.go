@@ -29,6 +29,7 @@ func keyFunc(obj interface{}) string {
 }
 
 // Key is the key used to index the queue.
+// NamespaceとNameで一意にqueueを特定できる
 func Key(q *kueue.Queue) string {
 	return fmt.Sprintf("%s/%s", q.Namespace, q.Name)
 }

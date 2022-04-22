@@ -75,6 +75,7 @@ type ClusterQueue interface {
 	Info(string) *workload.Info
 }
 
+// CQの実装として、strategyに基づいて二つあり、それぞれを返す関数が登録されている
 var registry = map[kueue.QueueingStrategy]func(cq *kueue.ClusterQueue) (ClusterQueue, error){
 	StrictFIFO:     newClusterQueueStrictFIFO,
 	BestEffortFIFO: newClusterQueueBestEffortFIFO,

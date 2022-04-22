@@ -220,6 +220,6 @@ func (r *ClusterQueueReconciler) Status(cq *kueue.ClusterQueue) (kueue.ClusterQu
 	return kueue.ClusterQueueStatus{
 		UsedResources:     usage,
 		AdmittedWorkloads: int32(workloads),
-		PendingWorkloads:  r.qManager.Pending(cq), // TODO: managerみる
+		PendingWorkloads:  r.qManager.Pending(cq), // pendingしてるworkloadの数を取得してるだけ
 	}, nil
 }

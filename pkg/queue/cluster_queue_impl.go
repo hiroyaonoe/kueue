@@ -31,7 +31,7 @@ type ClusterQueueImpl struct {
 	// across the queues in this ClusterQueue.
 	QueueingStrategy kueue.QueueingStrategy
 
-	heap   heap.Heap
+	heap   heap.Heap // workloadの管理にheapを使っている
 	cohort string
 }
 
@@ -104,6 +104,8 @@ func (c *ClusterQueueImpl) Pop() *workload.Info {
 }
 
 func (c *ClusterQueueImpl) Pending() int32 {
+	// pendingしているworkloadの数 = heapの長さ
+	// 裏返すと、heapにはpendingしているworkloadしか入っていない
 	return int32(c.heap.Len())
 }
 

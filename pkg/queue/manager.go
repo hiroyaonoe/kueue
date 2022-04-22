@@ -217,6 +217,8 @@ func (m *Manager) DeleteQueue(q *kueue.Queue) {
 	delete(m.queues, key)
 }
 
+// PendingWorkloads はQueueの持つworkloadの数を返す
+// queueが持っているworkload = pendingしているworkload
 func (m *Manager) PendingWorkloads(q *kueue.Queue) (int32, error) {
 	m.RLock()
 	defer m.RUnlock()
@@ -229,6 +231,8 @@ func (m *Manager) PendingWorkloads(q *kueue.Queue) (int32, error) {
 	return int32(len(qImpl.items)), nil
 }
 
+// Pending はcqの持つworkloadの数を返す
+// cqが持っているworkload = 関連するqueueが持っているworkload = pendingしているworkload
 func (m *Manager) Pending(cq *kueue.ClusterQueue) int32 {
 	m.RLock()
 	defer m.RUnlock()

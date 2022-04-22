@@ -56,11 +56,14 @@ func (r *QueueReconciler) NotifyWorkloadUpdate(w *kueue.Workload) {
 	r.wlUpdateCh <- event.GenericEvent{Object: w}
 }
 
+// kubebuilderのタグを見ると何のリソースを操作するor見るか分かり易い
+// queue, eventしか更新しない
 //+kubebuilder:rbac:groups="",resources=events,verbs=create;watch;update
 //+kubebuilder:rbac:groups=kueue.x-k8s.io,resources=queues,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=kueue.x-k8s.io,resources=queues/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=kueue.x-k8s.io,resources=queues/finalizers,verbs=update
 
+// Reconcile はqueueの持つworkloadの数を取得し、変更があるならばstatusをupdate
 func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var queueObj kueue.Queue
 	if err := r.client.Get(ctx, req.NamespacedName, &queueObj); err != nil {
@@ -72,8 +75,11 @@ func (r *QueueReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	log.V(2).Info("Reconciling Queue")
 
 	// Shallow copy enough for now.
+	// 今のstatusの定義ならば、shallow copy = deep copy なのでshallowで十分
+	// statusのフィールドが増えた場合はこれが成り立たなくなる場合がある
 	oldStatus := queueObj.Status
 
+	// queueの持っている(= pendingしている)workloadの数を取得
 	pending, err := r.queues.PendingWorkloads(&queueObj)
 	if err != nil {
 		r.log.Error(err, "Failed to retrieve queue status")
