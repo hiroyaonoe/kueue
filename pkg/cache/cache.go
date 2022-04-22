@@ -415,7 +415,6 @@ func (c *Cache) Usage(cqObj *kueue.ClusterQueue) (kueue.UsedResources, int, erro
 	// リソースの使用量をキャッシュから取得する
 	usage := make(kueue.UsedResources, len(cq.UsedResources))
 	for rName, usedRes := range cq.UsedResources {
-		// NEXT: 2022-04-21
 		rUsage := make(map[string]kueue.Usage)
 		requestable := cq.RequestableResources[rName]
 		for _, flavor := range requestable {

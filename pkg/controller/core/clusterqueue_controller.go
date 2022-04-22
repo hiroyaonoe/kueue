@@ -45,7 +45,8 @@ type ClusterQueueReconciler struct {
 	log        logr.Logger
 	qManager   *queue.Manager
 	cache      *cache.Cache
-	wlUpdateCh chan event.GenericEvent
+	wlUpdateCh chan event.GenericEvent // workloadがupdateされたことを伝えるchannel
+	// TODO: いつchannelにeventが入るか調査
 }
 
 func NewClusterQueueReconciler(client client.Client, qMgr *queue.Manager, cache *cache.Cache) *ClusterQueueReconciler {
@@ -54,7 +55,7 @@ func NewClusterQueueReconciler(client client.Client, qMgr *queue.Manager, cache 
 		log:        ctrl.Log.WithName("cluster-queue-reconciler"),
 		qManager:   qMgr,
 		cache:      cache,
-		wlUpdateCh: make(chan event.GenericEvent, wlUpdateChBuffer),
+		wlUpdateCh: make(chan event.GenericEvent, wlUpdateChBuffer), // ここでchanが作られてる
 	}
 }
 
@@ -155,6 +156,8 @@ func (r *ClusterQueueReconciler) Generic(e event.GenericEvent) bool {
 // associated to the workload in the event.
 // Since the events come from a channel Source, only the Generic handler will
 // receive events.
+// EventHandler の実装
+// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/handler#EventHandler
 type cqWorkloadHandler struct {
 	qManager *queue.Manager
 }
@@ -168,11 +171,13 @@ func (h *cqWorkloadHandler) Update(event.UpdateEvent, workqueue.RateLimitingInte
 func (h *cqWorkloadHandler) Delete(event.DeleteEvent, workqueue.RateLimitingInterface) {
 }
 
+// Create, Update, Delete 以外のイベントが起きた場合に呼び出される
+// TODO: なぜCUD では何もしない？workloadが更新されたときは本当にこれが呼び出されるの？
 func (h *cqWorkloadHandler) Generic(e event.GenericEvent, q workqueue.RateLimitingInterface) {
 	w := e.Object.(*kueue.Workload)
 	req := h.requestForWorkloadClusterQueue(w)
 	if req != nil {
-		q.AddAfter(*req, constants.UpdatesBatchPeriod)
+		q.AddAfter(*req, constants.UpdatesBatchPeriod) // 1s待つ理由はUpdatesBatchPeriodの定義参照
 	}
 }
 
@@ -182,7 +187,7 @@ func (h *cqWorkloadHandler) requestForWorkloadClusterQueue(w *kueue.Workload) *r
 		name = string(w.Spec.Admission.ClusterQueue)
 	} else {
 		var ok bool
-		name, ok = h.qManager.ClusterQueueForWorkload(w)
+		name, ok = h.qManager.ClusterQueueForWorkload(w) // workloadに書いてあるqueueからcqを引っ張ってくる
 		if !ok {
 			return nil
 		}
@@ -201,7 +206,7 @@ func (r *ClusterQueueReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kueue.ClusterQueue{}).
-		Watches(&source.Channel{Source: r.wlUpdateCh}, &wHandler). // TODO: 何をしている？
+		Watches(&source.Channel{Source: r.wlUpdateCh}, &wHandler). // workloadがupdateされるとwHandlerを呼び出す
 		WithEventFilter(r).
 		Complete(r)
 }

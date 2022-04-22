@@ -250,6 +250,7 @@ func (m *Manager) QueueForWorkloadExists(wl *kueue.Workload) bool {
 // ClusterQueueForWorkload returns the name of the ClusterQueue where the
 // workload should be queued and whether it exists.
 // Returns empty string if the queue doesn't exist.
+// Workloadに書いてあるQueueからcqを引っ張ってくる
 func (m *Manager) ClusterQueueForWorkload(wl *kueue.Workload) (string, bool) {
 	m.RLock()
 	defer m.RUnlock()

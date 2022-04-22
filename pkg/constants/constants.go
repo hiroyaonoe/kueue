@@ -29,6 +29,7 @@ const (
 
 	// UpdatesBatchPeriod is the batch period to hold workload updates
 	// before syncing a Queue and ClusterQueue objects.
+	// queue, cqのsyncが完了してからworkloadをupdateするための時間
 	UpdatesBatchPeriod = time.Second
 
 	// DefaultPriority is used to set priority of workloads

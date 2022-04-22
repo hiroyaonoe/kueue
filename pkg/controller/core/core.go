@@ -33,6 +33,8 @@ func SetupControllers(mgr ctrl.Manager, qManager *queue.Manager, cc *cache.Cache
 	if err := cqRec.SetupWithManager(mgr); err != nil {
 		return "ClusterQueue", err
 	}
+	// NEXT: 2022-04-22
+	// ここでqRec, cqRecを入れることでworkload update chanを取得している？
 	if err := NewWorkloadReconciler(mgr.GetClient(), qManager, cc, qRec, cqRec).SetupWithManager(mgr); err != nil {
 		return "Workload", err
 	}

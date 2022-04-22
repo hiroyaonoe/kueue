@@ -154,17 +154,22 @@ func (h *qWorkloadHandler) Update(event.UpdateEvent, workqueue.RateLimitingInter
 func (h *qWorkloadHandler) Delete(event.DeleteEvent, workqueue.RateLimitingInterface) {
 }
 
+// cq と同様の状況で呼び出される
 func (h *qWorkloadHandler) Generic(e event.GenericEvent, q workqueue.RateLimitingInterface) {
 	w := e.Object.(*kueue.Workload)
 	if w.Name == "" {
 		return
 	}
+	// reconcileのリクエスト
+	// queueの名前をworkloadのspecから取得
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Name:      w.Spec.QueueName,
 			Namespace: w.Namespace,
 		},
 	}
+	// 1秒後に突っ込む
+	// なぜ1秒後なのかはUpdatesBatchPeriodのコメント参照
 	q.AddAfter(req, constants.UpdatesBatchPeriod)
 }
 
@@ -172,7 +177,7 @@ func (h *qWorkloadHandler) Generic(e event.GenericEvent, q workqueue.RateLimitin
 func (r *QueueReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kueue.Queue{}).
-		Watches(&source.Channel{Source: r.wlUpdateCh}, &qWorkloadHandler{}).
+		Watches(&source.Channel{Source: r.wlUpdateCh}, &qWorkloadHandler{}). //cq reconcileと同様にworkloadのupdate時にqWorkloadHanderを呼び出す
 		WithEventFilter(r).
 		Complete(r)
 }

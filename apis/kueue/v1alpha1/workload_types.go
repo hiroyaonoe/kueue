@@ -34,6 +34,8 @@ type WorkloadSpec struct {
 	QueueName string `json:"queueName"`
 
 	// admission holds the parameters of the admission of the workload by a ClusterQueue.
+	// optionalでcqやflavorを指定できる
+	// cq controllerの requestForWorkloadClusterQueue を見るかんじ、QueueNameよりも優先される？
 	Admission *Admission `json:"admission,omitempty"`
 
 	// If specified, indicates the workload's priority.
